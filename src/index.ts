@@ -400,4 +400,12 @@ _Spiegel.default = _Spiegel;
 
 const Spiegel: Spiegel = freezeObject(_Spiegel);
 
+declare namespace globalThis {
+  var Spiegel: Spiegel;
+}
+
+IntrinsicReflect.defineProperty(globalThis, 'Spiegel', {
+  value: Spiegel,
+});
+
 export default Spiegel;
