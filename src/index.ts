@@ -136,6 +136,57 @@ const canBeHeldWeakly = (value: unknown): boolean =>
 
 const intrinsicObjectCreate = Object.create;
 const intrinsicObjectFreeze = Object.freeze;
+const intrinsicSymbol = Symbol;
+const intrinsicProxyRevocable = Proxy.revocable;
+
+const objectToSymbol = new WeakMap<object, symbol>();
+const symbolToObject = new WeakMap<symbol, object>();
+const objectToSymbolGet = objectToSymbol.get.bind(objectToSymbol);
+const objectToSymbolSet = objectToSymbol.set.bind(objectToSymbol);
+const symbolToObjectGet = symbolToObject.get.bind(symbolToObject);
+const symbolToObjectSet = symbolToObject.set.bind(symbolToObject);
+
+const createRevokedProxy = (): object => {
+  const {proxy, revoke} = intrinsicProxyRevocable(intrinsicObjectFreeze(intrinsicObjectCreate(null)), {});
+  revoke();
+  return proxy;
+};
+
+const symbolForObject = (obj: object): symbol => {
+  if (!isObject(obj)) {
+    throw new IntrinsicTypeError('Value is not an object');
+  }
+
+  const existingSymbol = objectToSymbolGet(obj);
+  if (existingSymbol !== undefined) {
+    return existingSymbol;
+  }
+
+  const symbol = intrinsicSymbol();
+  objectToSymbolSet(obj, symbol);
+  symbolToObjectSet(symbol, obj);
+  return symbol;
+};
+
+const objectForSymbol = <T extends object>(symbol: symbol): T => {
+  if (typeof symbol != 'symbol') {
+    throw new IntrinsicTypeError('Not a symbol');
+  }
+
+  if (undefined !== intrinsicSymbolKeyFor(symbol)) {
+    throw new IntrinsicTypeError('Registered symbols are not supported');
+  }
+
+  const existingObject = symbolToObjectGet(symbol);
+  if (existingObject !== undefined) {
+    return existingObject as T;
+  }
+
+  const obj = createRevokedProxy();
+  objectToSymbolSet(obj, symbol);
+  symbolToObjectSet(symbol, obj);
+  return obj as T;
+};
 
 interface Spiegel {
   /**
@@ -274,6 +325,36 @@ interface Spiegel {
    * @throws TypeError if the prototype is neither an object nor null.
    */
   readonly createObject: (proto: object | null) => object;
+
+  /**
+   * Create a fresh, already revoked proxy over a frozen object with a null prototype.
+   * The proxy can be used as an identity token or weak key, but operations
+   * that invoke its internal object methods throw TypeError.
+   * @returns a new revoked proxy.
+   */
+  readonly createRevokedProxy: () => object;
+
+  /**
+   * Get the object associated with a nonregistered symbol in this module instance.
+   * Creates a revoked proxy if the symbol has no associated object yet.
+   * Repeated calls return the same object; symbolForObject returns the original symbol.
+   * The association uses weak keys. T is an unchecked type assertion, not a runtime check.
+   * @param symbol symbol to map to an object.
+   * @returns the original associated object, or a revoked proxy for a new symbol.
+   * @throws TypeError if the value is not a symbol or is registered with Symbol.for.
+   */
+  readonly objectForSymbol: <T extends object>(symbol: symbol) => T;
+
+  /**
+   * Get the nonregistered symbol associated with an object in this module instance.
+   * Creates a fresh symbol if the object has no associated symbol yet.
+   * Repeated calls return the same symbol; objectForSymbol returns the original object.
+   * The association uses weak keys and accepts functions and revoked proxies.
+   * @param obj object to map to a symbol.
+   * @returns the symbol associated with the object.
+   * @throws TypeError if the value is not an object.
+   */
+  readonly symbolForObject: (obj: object) => symbol;
 }
 
 const Spiegel: Spiegel = Object.freeze(assignEverything(Object.create(null), {
@@ -295,6 +376,9 @@ const Spiegel: Spiegel = Object.freeze(assignEverything(Object.create(null), {
   canBeHeldWeakly,
   freezeObject: intrinsicObjectFreeze,
   createObject: (proto: object | null): object => intrinsicObjectCreate(proto),
+  createRevokedProxy,
+  objectForSymbol,
+  symbolForObject,
 }, false));
 
 export default Spiegel;
