@@ -400,7 +400,7 @@ _Spiegel.default = _Spiegel;
 
 const Spiegel: Spiegel = freezeObject(_Spiegel);
 
-declare namespace globalThis {
+declare global {
   var Spiegel: Spiegel;
 }
 
