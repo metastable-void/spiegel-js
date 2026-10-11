@@ -1,0 +1,23 @@
+{
+  "name": "@menhera/spiegel",
+  "version": "0.1.0",
+  "description": "Pure ECMAScript utilities",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/metastable-void/spiegel-js.git"
+  },
+  "author": "metastable-void",
+  "license": "Apache-2.0 OR MPL-2.0",
+  "bugs": {
+    "url": "https://github.com/metastable-void/spiegel-js/issues"
+  },
+  "homepage": "https://github.com/metastable-void/spiegel-js#readme",
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}
