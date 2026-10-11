@@ -188,7 +188,21 @@ const objectForSymbol = <T extends object>(symbol: symbol): T => {
   return obj as T;
 };
 
+const createObject = (proto: object | null): object => intrinsicObjectCreate(proto);
+const freezeObject = intrinsicObjectFreeze;
+const isArray = intrinsicIsArray;
+
 interface Spiegel {
+  /**
+   * Self reference.
+   */
+  readonly Spiegel: Spiegel,
+
+  /**
+   * Self reference.
+   */
+  readonly default: Spiegel,
+
   /**
    * `Symbol.for('dad582c7-ec0a-4b47-90fd-809e86e21259')`
    */
@@ -357,13 +371,13 @@ interface Spiegel {
   readonly symbolForObject: (obj: object) => symbol;
 }
 
-const Spiegel: Spiegel = Object.freeze(assignEverything(Object.create(null), {
+const _Spiegel = assignEverything(intrinsicObjectCreate(null), {
   ID: intrinsicSymbolFor('dad582c7-ec0a-4b47-90fd-809e86e21259'),
   isCallable,
   isConstructor,
   isObject,
   hasRevokedProxyInChain,
-  isArray: intrinsicIsArray,
+  isArray,
   isPrimitive,
   sameValue,
   toBoolean,
@@ -374,15 +388,16 @@ const Spiegel: Spiegel = Object.freeze(assignEverything(Object.create(null), {
   toString,
   toUint32,
   canBeHeldWeakly,
-  freezeObject: intrinsicObjectFreeze,
-  createObject: (proto: object | null): object => intrinsicObjectCreate(proto),
+  freezeObject,
+  createObject,
   createRevokedProxy,
   objectForSymbol,
   symbolForObject,
-}, false));
+}, false);
+
+_Spiegel.Spiegel = _Spiegel;
+_Spiegel.default = _Spiegel;
+
+const Spiegel: Spiegel = freezeObject(_Spiegel);
 
 export default Spiegel;
-
-export {
-  Spiegel,
-};
